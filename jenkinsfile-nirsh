@@ -1,0 +1,40 @@
+node('built-in') {
+    stage('Clean and checkout code') {
+        cleanWs()
+        checkout([$class: 'GitSCM', branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'git-nirshif', url: 'https://github.com/nirshif/hello-world-war.git']]])
+    }
+    stage('SonarQube scan') {
+        withSonarQubeEnv(installationName: 'FinalProject-Sonar-nirsh') {
+            sh 'mvn clean sonar:sonar'
+        }
+    }
+    stage('Build') {
+        sh 'mvn compile'
+    }
+    stage('Test') {
+        sh 'mvn test'
+    }
+    stage('Package') {
+        sh 'mvn package'
+    }
+    stage('Publish artifact') {
+        archiveArtifacts artifacts: 'target/*.war', followSymlinks: false
+    }
+    stage('Docker Build+TAG') {
+        sh 'git clone https://github.com/nirshif/Infra-nirsh.git'
+        dir('/var/lib/jenkins/workspace/pipeline-finalp/Infra-nirsh') {
+
+
+        sh 'git checkout main'
+        sh 'cp Dockerfile /var/lib/jenkins/workspace/pipeline-finalp'
+    }
+        sh 'docker build -t hello-world-war:$BUILD_ID .'
+  
+    }
+       
+    stage('Push To Nexus Registry') {
+        sh 'docker login -u 184.73.211.202:8082'
+        sh 'docker tag hello-world-war:$BUILD_ID 184.73.211.202:8082/hello-world:$BUILD_ID'
+        sh 'docker push 184.73.211.202:8082/hello-world:$BUILD_ID'
+    }
+}
