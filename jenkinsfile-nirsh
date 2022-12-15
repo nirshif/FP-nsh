@@ -24,7 +24,6 @@ node('built-in') {
         sh 'git clone https://github.com/nirshif/Infra-nirsh.git'
         dir('/var/lib/jenkins/workspace/pipeline-finalp/Infra-nirsh') {
 
-
         sh 'git checkout main'
         sh 'cp Dockerfile /var/lib/jenkins/workspace/pipeline-finalp'
     }
